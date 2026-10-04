@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>browserdb</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0e11; --card:#14171b; --line:#262b32; --text:#e4e7eb; --muted:#8b94a1;
+  --btn-bg:#20242a; --accept-bg:#ffffff; --accept-text:#14171b;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+:root[data-theme="light"]{
+  --bg:#f3f4f6; --card:#ffffff; --line:#cfd4db; --text:#1b1e23; --muted:#667085;
+  --btn-bg:#e6e8ec; --accept-bg:#1b1e23; --accept-text:#ffffff;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;border-radius:0}
+body{margin:0;background:var(--bg);color:var(--text);font-family:'Roboto Mono',ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.55}
+body,.card,button,.btn,.cookie{transition:background-color .45s ease,color .45s ease,border-color .45s ease}
+a{color:inherit}
+header{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;max-width:1100px;margin:0 auto;padding:56px 24px 40px}
+.brand{grid-column:2;display:flex;align-items:center;gap:12px;font-size:26px;font-weight:500;text-decoration:none}
+.brand svg{width:30px;height:30px;flex:none}
+#theme{grid-column:3;grid-row:1;justify-self:end;background:none;border:1px solid transparent;color:var(--text);width:40px;height:40px;padding:7px;cursor:pointer;display:flex}
+#theme:hover{border-color:var(--line)}
+#theme svg{width:100%;height:100%}
+.btn{grid-column:2;grid-row:2;justify-self:center;margin-top:18px;padding:8px 16px;border:1px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-size:13px;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--btn-bg)}
+#theme:focus-visible,.btn:focus-visible,.cookie button:focus-visible{outline:2px solid var(--text);outline-offset:2px}
+main{max-width:1100px;margin:0 auto;padding:0 24px 120px;display:grid;grid-template-columns:repeat(12,1fr);gap:16px;grid-auto-flow:dense}
+.card{grid-column:span 4;background:var(--card);border:1px solid var(--line);padding:14px 16px 16px;min-height:92px;min-width:0}
+.s2{grid-column:span 2}.s3{grid-column:span 3}.s4{grid-column:span 4}.s5{grid-column:span 5}.s6{grid-column:span 6}.s7{grid-column:span 7}.s8{grid-column:span 8}
+.tall{min-height:150px}
+.card h2{margin:0 0 8px;font-size:12px;font-weight:500;color:var(--muted)}
+.card p{margin:0;font-size:14px;overflow-wrap:anywhere}
+.card .big{font-size:22px;font-weight:500}
+.card.masked p{color:var(--muted);letter-spacing:.2em;user-select:none}
+.note{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;color:var(--muted);font-size:12px;margin-top:8px}
+.note .btn{margin:0;grid-column:auto;font-size:12px}
+.cookie{position:fixed;right:20px;bottom:calc(20px + env(safe-area-inset-bottom,0px));width:min(330px,calc(100% - 40px));background:var(--card);border:1px solid var(--line);padding:16px;z-index:5}
+.cookie[hidden]{display:none}
+.cookie p{margin:0 0 14px;font-size:13px}
+.cookie div{display:flex;gap:10px}
+.cookie button{flex:1;padding:9px 12px;font:inherit;font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--line)}
+#accept{background:var(--accept-bg);color:var(--accept-text);border-color:var(--accept-bg)}
+#decline{background:var(--btn-bg);color:var(--text)}
+@media (max-width:700px){
+  main{grid-template-columns:repeat(12,1fr)}
+  .card,.s4,.s5,.s6,.s7,.s8{grid-column:span 12}
+  .s2,.s3{grid-column:span 6}
+  header{padding-top:36px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <a class="brand" href="/"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M21 5C21 6.65685 16.9706 8 12 8C7.02944 8 3 6.65685 3 5M21 5C21 3.34315 16.9706 2 12 2C7.02944 2 3 3.34315 3 5M21 5V19C21 20.66 17 22 12 22C7 22 3 20.66 3 19V5M21 12C21 13.66 17 15 12 15C7 15 3 13.66 3 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>browserdb</span></a>
+  <button id="theme" aria-label="Switch to light mode"></button>
+  <a class="btn" href="/what-does-this-mean">What does this mean?</a>
+</header>
+<main id="grid"></main>
+<script>
+(function(){
+  var root=document.documentElement;
+  function load(k){try{return localStorage.getItem(k)}catch(e){return null}}
+  function store(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+  function del(k){try{localStorage.removeItem(k)}catch(e){}}
+  var SUN='<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 1C11 0.447715 11.4477 0 12 0C12.5523 0 13 0.447715 13 1V3C13 3.55228 12.5523 4 12 4C11.4477 4 11 3.55228 11 3V1Z" fill="currentColor"/><path fill-rule="evenodd" clip-rule="evenodd" d="M18 12C18 15.3137 15.3137 18 12 18C8.68629 18 6 15.3137 6 12C6 8.68629 8.68629 6 12 6C15.3137 6 18 8.68629 18 12ZM8.06167 12C8.06167 14.1751 9.82492 15.9383 12 15.9383C14.1751 15.9383 15.9383 14.1751 15.9383 12C15.9383 9.82492 14.1751 8.06167 12 8.06167C9.82492 8.06167 8.06167 9.82492 8.06167 12Z" fill="currentColor"/><path d="M20.4853 3.51472C20.0947 3.12419 19.4616 3.12419 19.0711 3.51472L17.6568 4.92893C17.2663 5.31946 17.2663 5.95262 17.6568 6.34315C18.0474 6.73367 18.6805 6.73367 19.0711 6.34315L20.4853 4.92893C20.8758 4.53841 20.8758 3.90524 20.4853 3.51472Z" fill="currentColor"/><path d="M1 13C0.447715 13 0 12.5523 0 12C0 11.4477 0.447715 11 1 11H3C3.55228 11 4 11.4477 4 12C4 12.5523 3.55228 13 3 13H1Z" fill="currentColor"/><path d="M3.51472 3.51472C3.1242 3.90524 3.1242 4.53841 3.51472 4.92893L4.92894 6.34315C5.31946 6.73367 5.95263 6.73367 6.34315 6.34315C6.73368 5.95262 6.73368 5.31946 6.34315 4.92893L4.92894 3.51472C4.53841 3.12419 3.90525 3.12419 3.51472 3.51472Z" fill="currentColor"/><path d="M11 21C11 20.4477 11.4477 20 12 20C12.5523 20 13 20.4477 13 21V23C13 23.5523 12.5523 24 12 24C11.4477 24 11 23.5523 11 23V21Z" fill="currentColor"/><path d="M6.34315 17.6569C5.95263 17.2663 5.31946 17.2663 4.92894 17.6569L3.51473 19.0711C3.1242 19.4616 3.1242 20.0948 3.51473 20.4853C3.90525 20.8758 4.53842 20.8758 4.92894 20.4853L6.34315 19.0711C6.73368 18.6805 6.73368 18.0474 6.34315 17.6569Z" fill="currentColor"/><path d="M21 13C20.4477 13 20 12.5523 20 12C20 11.4477 20.4477 11 21 11H23C23.5523 11 24 11.4477 24 12C24 12.5523 23.5523 13 23 13H21Z" fill="currentColor"/><path d="M17.6568 17.6569C17.2663 18.0474 17.2663 18.6805 17.6568 19.0711L19.0711 20.4853C19.4616 20.8758 20.0947 20.8758 20.4853 20.4853C20.8758 20.0948 20.8758 19.4616 20.4853 19.0711L19.0711 17.6569C18.6805 17.2663 18.0474 17.2663 17.6568 17.6569Z" fill="currentColor"/></svg>';
+  var MOON='<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.32031 11.6835C3.32031 16.6541 7.34975 20.6835 12.3203 20.6835C16.1075 20.6835 19.3483 18.3443 20.6768 15.032C19.6402 15.4486 18.5059 15.6834 17.3203 15.6834C12.3497 15.6834 8.32031 11.654 8.32031 6.68342C8.32031 5.50338 8.55165 4.36259 8.96453 3.32996C5.65605 4.66028 3.32031 7.89912 3.32031 11.6835Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var btn=document.getElementById('theme'), listeners=[];
+  var state=load('browserdb-cookie')==='accept'?'accept':'pending';
+
+  function setTheme(t){
+    root.setAttribute('data-theme',t);
+    btn.innerHTML=t==='dark'?SUN:MOON;
+    btn.setAttribute('aria-label',t==='dark'?'Switch to light mode':'Switch to dark mode');
+  }
+  setTheme(state==='accept'&&load('browserdb-theme')==='light'?'light':'dark');
+  btn.addEventListener('click',function(){
+    var next=root.getAttribute('data-theme')==='dark'?'light':'dark';
+    setTheme(next);
+    if(state==='accept') store('browserdb-theme',next);
+  });
+
+  var box=document.createElement('aside');
+  box.className='cookie'; box.hidden=true;
+  box.innerHTML='<p>Cookies let browserdb remember your light or dark mode and show your browser info. If you decline, the info stays hidden and the mode is not saved.</p><div><button id="accept">Accept</button><button id="decline">Decline</button></div>';
+  document.body.appendChild(box);
+
+  function emit(){listeners.forEach(function(f){f(state)})}
+  function choose(c){
+    state=c; box.hidden=true;
+    if(c==='accept'){store('browserdb-cookie','accept');store('browserdb-theme',root.getAttribute('data-theme'))}
+    else{del('browserdb-cookie');del('browserdb-theme')}
+    emit();
+  }
+  box.querySelector('#accept').addEventListener('click',function(){choose('accept')});
+  box.querySelector('#decline').addEventListener('click',function(){choose('decline')});
+  if(state==='pending') box.hidden=false;
+
+  window.bdb={
+    listen:function(f){listeners.push(f);f(state)},
+    ask:function(){box.hidden=false}
+  };
+})();
+</script>
+<script>
+(function(){
+  var grid=document.getElementById('grid'), cards={}, vals={}, shown=false, started=false;
+  var MASK='••••••••';
+  function card(k,title,span,extra){
+    var c=document.createElement('section'); c.className='card masked '+span+(extra?' '+extra:'');
+    c.innerHTML='<h2></h2><p></p>'; c.firstChild.textContent=title;
+    grid.appendChild(c); cards[k]=c; vals[k]='…'; paint(k);
+  }
+  function paint(k){
+    var c=cards[k], p=c.lastChild;
+    p.textContent=shown?vals[k]:MASK;
+    c.classList.toggle('masked',!shown);
+    if(k==='webrtc') p.style.whiteSpace='pre-line';
+  }
+  function set(k,v){vals[k]=v;paint(k)}
+  function paintAll(){Object.keys(cards).forEach(paint)}
+  function mq(q){return matchMedia(q).matches}
+
+  card('webrtc','WebRTC IP','s5','tall');
+  card('ua','User agent','s7','tall');
+  card('screen','Screen','s3'); card('view','Viewport','s3'); card('dpr','Pixel ratio','s2'); card('depth','Color depth','s2'); card('cores','CPU threads','s2');
+  card('platform','Platform','s4'); card('lang','Languages','s4'); card('tz','Timezone','s4');
+  card('gpu','WebGL renderer','s7'); card('canvas','Canvas fingerprint','s5','tall');
+  card('mem','Device memory','s3'); card('touch','Touch points','s3'); card('conn','Connection','s6');
+  card('scheme','Color scheme','s2'); card('motion','Reduced motion','s2'); card('dnt','Do Not Track','s2'); card('gpc','Global Privacy Control','s2'); card('cookies','Cookies enabled','s2'); card('online','Online','s2');
+  card('webdriver','Automation flag','s4'); card('ref','Referrer','s4'); card('storage','Storage quota','s2'); card('battery','Battery','s2');
+  cards.canvas.lastChild.classList.add('big');
+
+  var note=document.createElement('div'); note.className='note';
+  note.innerHTML='<span>Everything is read in your browser. Only the WebRTC check contacts a public STUN server.</span>';
+  var again=document.createElement('button'); again.className='btn'; again.textContent='Change cookie choice';
+  again.onclick=function(){bdb.ask()}; note.appendChild(again); grid.appendChild(note);
+
+  function collect(){
+    if(started) return; started=true;
+    var n=navigator, s=screen, nc=n.connection||{};
+    var tz=''; try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone}catch(e){}
+    var off=-new Date().getTimezoneOffset(), sg=off>=0?'+':'-';
+    var oh=String(Math.floor(Math.abs(off)/60)).padStart(2,'0'), om=String(Math.abs(off)%60).padStart(2,'0');
+    set('ua',n.userAgent);
+    set('platform',n.userAgentData&&n.userAgentData.platform?n.userAgentData.platform:(n.platform||'unknown'));
+    set('lang',(n.languages&&n.languages.length?n.languages:[n.language]).join(', '));
+    set('tz',(tz||'unknown')+' (UTC'+sg+oh+':'+om+')');
+    set('screen',s.width+' × '+s.height+' px');
+    set('view',innerWidth+' × '+innerHeight+' px');
+    set('dpr',String(devicePixelRatio));
+    set('depth',s.colorDepth+'-bit');
+    set('cores',n.hardwareConcurrency?String(n.hardwareConcurrency):'hidden');
+    set('mem',n.deviceMemory?'≥ '+n.deviceMemory+' GB':'hidden');
+    set('touch',String(n.maxTouchPoints||0));
+    set('conn',nc.effectiveType?nc.effectiveType+', ~'+nc.downlink+' Mbps, '+nc.rtt+' ms RTT':'hidden');
+    set('scheme',mq('(prefers-color-scheme: dark)')?'dark':'light');
+    set('motion',mq('(prefers-reduced-motion: reduce)')?'yes':'no');
+    set('dnt',n.doNotTrack==='1'||window.doNotTrack==='1'?'on':'off / unset');
+    set('gpc',n.globalPrivacyControl?'on':'off / unset');
+    set('cookies',n.cookieEnabled?'yes':'no');
+    set('online',n.onLine?'yes':'no');
+    set('webdriver',n.webdriver?'set':'not set');
+    set('ref',document.referrer||'none');
+    try{
+      var gl=document.createElement('canvas').getContext('webgl'), ext=gl&&gl.getExtension('WEBGL_debug_renderer_info');
+      set('gpu',ext?gl.getParameter(ext.UNMASKED_VENDOR_WEBGL)+' / '+gl.getParameter(ext.UNMASKED_RENDERER_WEBGL):(gl?'masked by browser':'WebGL unavailable'));
+    }catch(e){set('gpu','unavailable')}
+    try{
+      var cv=document.createElement('canvas'); cv.width=240; cv.height=60;
+      var x=cv.getContext('2d'); x.textBaseline='top'; x.font='16px Arial';
+      x.fillStyle='#f60'; x.fillRect(10,8,80,30); x.fillStyle='#069'; x.fillText('browserdb 0123',6,20);
+      x.strokeStyle='rgba(120,40,200,.7)'; x.arc(150,30,18,0,6.28); x.stroke();
+      var d=cv.toDataURL(), h1=0xdeadbeef, h2=0x41c6ce57;
+      for(var i=0;i<d.length;i++){var c=d.charCodeAt(i);h1=Math.imul(h1^c,2654435761);h2=Math.imul(h2^c,1597334677)}
+      h1=Math.imul(h1^(h1>>>16),2246822507)^Math.imul(h2^(h2>>>13),3266489909);
+      set('canvas',(h1>>>0).toString(16).padStart(8,'0'));
+    }catch(e){set('canvas','blocked')}
+    if(n.storage&&n.storage.estimate) n.storage.estimate().then(function(e){set('storage',e.quota?(e.quota/1073741824).toFixed(1)+' GB':'hidden')}).catch(function(){set('storage','hidden')}); else set('storage','hidden');
+    if(n.getBattery) n.getBattery().then(function(b){set('battery',Math.round(b.level*100)+'%'+(b.charging?', charging':''))}).catch(function(){set('battery','hidden')}); else set('battery','hidden');
+    try{
+      var found={}, pc=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+      pc.createDataChannel('x');
+      pc.onicecandidate=function(ev){
+        if(!ev.candidate){var ips=Object.keys(found);set('webrtc',ips.length?ips.join('\n'):'none exposed');pc.close();return}
+        var p=ev.candidate.candidate.split(' '); if(p[4]) found[p[4]+' ('+p[7]+')']=1;
+      };
+      pc.createOffer().then(function(o){return pc.setLocalDescription(o)}).catch(function(){set('webrtc','blocked')});
+      setTimeout(function(){if(vals.webrtc==='…')set('webrtc','no response')},4000);
+    }catch(e){set('webrtc','blocked')}
+  }
+
+  bdb.listen(function(state){
+    shown=state==='accept';
+    if(shown) collect();
+    paintAll();
+  });
+})();
+</script>
+</body>
+</html>
